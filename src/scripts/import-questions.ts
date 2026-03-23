@@ -44,7 +44,13 @@ ON CONFLICT (id) DO UPDATE SET
 
 async function main(): Promise<void> {
   const env = loadEnv();
-  const defaultPath = resolve(process.cwd(), "..", "extractor", "data", "questions.json");
+  const defaultPath = resolve(
+    process.cwd(),
+    "tools",
+    "extractor",
+    "data",
+    "questions.json",
+  );
   const jsonPath = env.QUESTIONS_JSON_PATH ?? defaultPath;
 
   const raw = await readFile(jsonPath, "utf-8");

@@ -1,0 +1,11 @@
+# Railway: repositório com a API na raiz (Dockerfile).
+# Adicione o plugin PostgreSQL; DATABASE_URL e PORT são injetados automaticamente.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
