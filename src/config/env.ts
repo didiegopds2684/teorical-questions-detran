@@ -19,6 +19,7 @@ const envSchema = z.object({
     .optional()
     .transform((v) => v !== "false"),
   QUESTIONS_JSON_PATH: z.string().optional(),
+  ADMIN_API_KEY: z.string().min(16),
 });
 
 export type Env = z.infer<typeof envSchema>;
