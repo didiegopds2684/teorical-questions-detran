@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Node API
+api/node_modules/
+api/dist/
+api/coverage/
+api/.env
