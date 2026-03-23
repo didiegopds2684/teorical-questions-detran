@@ -23,10 +23,28 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
+function logRailwayDatabaseHint(): void {
+  console.error(`
+[env] DATABASE_URL is missing or invalid.
+
+Railway (obrigatório no serviço da API):
+  1. Projeto → adicione o recurso PostgreSQL (se ainda não existir).
+  2. Abra o serviço DESTA API → Settings → Variables.
+  3. "Add Variable" → "Reference" → escolha o serviço Postgres → variable DATABASE_URL.
+     (Ou copie a connection string do Postgres para DATABASE_URL.)
+
+Sem isso o processo encerra após o boot e o healthcheck nunca fica verde.
+`);
+}
+
 export function loadEnv(): Env {
   const parsed = envSchema.safeParse(process.env);
   if (!parsed.success) {
-    console.error("Invalid environment variables:", parsed.error.flatten().fieldErrors);
+    const fieldErrors = parsed.error.flatten().fieldErrors;
+    if (fieldErrors.DATABASE_URL !== undefined) {
+      logRailwayDatabaseHint();
+    }
+    console.error("Invalid environment variables:", fieldErrors);
     throw new Error("Invalid environment variables");
   }
   return {

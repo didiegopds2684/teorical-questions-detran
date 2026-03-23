@@ -114,10 +114,14 @@ A imagem não inclui dados: use `import:questions` uma vez no ambiente (job manu
 ## Deploy no Railway
 
 1. Crie um projeto e conecte o repositório (a API está na **raiz** do repo).
-2. Adicione o plugin **PostgreSQL**; o Railway define `DATABASE_URL`.
-3. **Build**: use o `Dockerfile` (veja [`railway.toml`](railway.toml)) ou build Nixpacks com `npm run build` e `npm start`.
-4. **Variáveis**: `PORT` é injetado; não fixe manualmente em produção.
-5. **Primeiro deploy**: após o banco vazio, rode **uma vez** o import das questões, por exemplo:
+2. Adicione o recurso **PostgreSQL** ao projeto (botão **New** → **Database** → Postgres).
+3. **Ligue o `DATABASE_URL` ao serviço da API** (passo que costuma faltar):
+   - Abra o **serviço da API** (não só o Postgres) → **Variables**.
+   - **Add variable** → **Reference** → selecione o serviço **Postgres** → escolha **`DATABASE_URL`**.
+   - Sem isso os logs mostram `DATABASE_URL: Required`, o processo reinicia e o healthcheck falha.
+4. **Build**: use o `Dockerfile` (veja [`railway.toml`](railway.toml)) ou build Nixpacks com `npm run build` e `npm start`.
+5. **Variáveis**: `PORT` é injetado; não fixe manualmente em produção.
+6. **Primeiro deploy**: após o banco vazio, rode **uma vez** o import das questões, por exemplo:
 
    ```bash
    railway run --service <seu-serviço> npm run import:questions
@@ -125,9 +129,9 @@ A imagem não inclui dados: use `import:questions` uma vez no ambiente (job manu
 
    (ou job one-off no dashboard), com `QUESTIONS_JSON_PATH` apontando para o JSON se necessário.
 
-6. **Migrações**: o servidor executa `npm run migrate` implicitamente? **Atualmente as migrações rodam no startup** em `dist/server.js` via `runMigrations()` antes de escutar a porta.
+7. **Migrações**: no arranque, após o servidor passar a escutar, `runMigrations()` aplica os SQL em `migrations/`.
 
-7. **Release command** (opcional): você pode configurar no Railway `npm run migrate` como release step e remover migrações do startup no futuro para deploys mais controlados.
+8. **Release command** (opcional): você pode configurar no Railway `npm run migrate` como release step e remover migrações do startup no futuro para deploys mais controlados.
 
 ## Estrutura
 
