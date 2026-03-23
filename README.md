@@ -10,6 +10,14 @@ API REST em **Node 20**, **Express**, **TypeScript** e **PostgreSQL** para servi
 - Node.js >= 20
 - PostgreSQL 16+ (local ou Docker)
 
+### Banco e responsabilidades
+
+Esta API só cria e mantém o schema de **questões** (`migrations/questions_*.sql` → tabela `questions`). **Usuários, tokens e perfil** ficam na **kuaa-api** (`auto-quiz-api`).
+
+**Mesmo Postgres para os dois serviços:** use o mesmo `DATABASE_URL` se quiser. Cada API guarda o histórico de migrações numa tabela separada (`SCHEMA_MIGRATIONS_TABLE`, por defeito `questions_schema_migrations` aqui e `schema_migrations` na kuaa-api), por isso não há colisão entre ficheiros com o mesmo nome (ex.: `001_init.sql`) nem entre equipas de migrações.
+
+Se já tinha migrado antes com a tabela antiga `schema_migrations`, defina `SCHEMA_MIGRATIONS_TABLE=schema_migrations` até migrar os dados ou renomear a tabela.
+
 ## Desenvolvimento local
 
 ### 1. Banco de dados

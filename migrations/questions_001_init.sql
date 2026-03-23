@@ -1,3 +1,4 @@
+-- Schema desta API: apenas `questions`. Usuários, auth e perfil ficam na kuaa-api (outro SCHEMA_MIGRATIONS_TABLE no mesmo Postgres).
 CREATE TABLE IF NOT EXISTS questions (
   id TEXT PRIMARY KEY,
   parte INTEGER NOT NULL,

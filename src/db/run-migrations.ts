@@ -1,40 +1,44 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { getPool, closePool } from "./pool.js";
-import { loadEnv } from "../config/env.js";
+import { getEnv, loadEnv } from "../config/env.js";
 import { seedQuestionsIfEmpty } from "./seed-questions.js";
 
-const MIGRATIONS_TABLE = `
-CREATE TABLE IF NOT EXISTS schema_migrations (
+function migrationsTableDdl(table: string): string {
+  return `
+CREATE TABLE IF NOT EXISTS ${table} (
   id SERIAL PRIMARY KEY,
   name TEXT UNIQUE NOT NULL,
   applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 `;
+}
 
 function migrationsDir(): string {
   return join(process.cwd(), "migrations");
 }
 
-async function ensureMigrationsTable(): Promise<void> {
+async function ensureMigrationsTable(migrationsTable: string): Promise<void> {
   const pool = getPool();
-  await pool.query(MIGRATIONS_TABLE);
+  await pool.query(migrationsTableDdl(migrationsTable));
 }
 
-async function getAppliedNames(): Promise<Set<string>> {
+async function getAppliedNames(migrationsTable: string): Promise<Set<string>> {
   const pool = getPool();
-  const { rows } = await pool.query<{ name: string }>("SELECT name FROM schema_migrations");
+  const { rows } = await pool.query<{ name: string }>(`SELECT name FROM ${migrationsTable}`);
   return new Set(rows.map((r) => r.name));
 }
 
 export async function runMigrations(): Promise<void> {
-  await ensureMigrationsTable();
+  loadEnv();
+  const migrationsTable = getEnv().SCHEMA_MIGRATIONS_TABLE;
+  await ensureMigrationsTable(migrationsTable);
   const dir = migrationsDir();
   const files = (await readdir(dir))
     .filter((f) => f.endsWith(".sql"))
     .sort((a, b) => a.localeCompare(b));
 
-  const applied = await getAppliedNames();
+  const applied = await getAppliedNames(migrationsTable);
   const pool = getPool();
 
   for (const file of files) {
@@ -46,7 +50,7 @@ export async function runMigrations(): Promise<void> {
     try {
       await client.query("BEGIN");
       await client.query(sql);
-      await client.query("INSERT INTO schema_migrations (name) VALUES ($1)", [file]);
+      await client.query(`INSERT INTO ${migrationsTable} (name) VALUES ($1)`, [file]);
       await client.query("COMMIT");
       console.log(`Migration applied: ${file}`);
     } catch (e) {

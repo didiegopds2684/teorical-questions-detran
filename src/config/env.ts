@@ -14,6 +14,11 @@ const envSchema = z.object({
     .string()
     .min(1)
     .refine((s) => s.startsWith("postgres"), "DATABASE_URL must be a PostgreSQL connection string"),
+  /** Tracking table for this service’s SQL migrations (same DATABASE_URL as kuaa-api is OK — use a different name than kuaa’s). */
+  SCHEMA_MIGRATIONS_TABLE: z
+    .string()
+    .regex(/^[a-z][a-z0-9_]{0,62}$/)
+    .default("questions_schema_migrations"),
   ENABLE_SWAGGER: z
     .enum(["true", "false"])
     .optional()
