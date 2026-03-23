@@ -120,6 +120,53 @@ export class QuestionsRepository {
     return mapRow(rows[0]);
   }
 
+  async upsert(q: Question): Promise<Question> {
+    const sql = `
+INSERT INTO questions (
+  id, parte, modulo_numero, modulo_titulo, numero, dificuldade,
+  enunciado, codigo_placa, alternativa_correta, comentario,
+  alternativas_incorretas, fonte
+) VALUES (
+  $1, $2, $3, $4, $5, $6,
+  $7, $8, $9, $10,
+  $11, $12
+)
+ON CONFLICT (id) DO UPDATE SET
+  parte = EXCLUDED.parte,
+  modulo_numero = EXCLUDED.modulo_numero,
+  modulo_titulo = EXCLUDED.modulo_titulo,
+  numero = EXCLUDED.numero,
+  dificuldade = EXCLUDED.dificuldade,
+  enunciado = EXCLUDED.enunciado,
+  codigo_placa = EXCLUDED.codigo_placa,
+  alternativa_correta = EXCLUDED.alternativa_correta,
+  comentario = EXCLUDED.comentario,
+  alternativas_incorretas = EXCLUDED.alternativas_incorretas,
+  fonte = EXCLUDED.fonte
+RETURNING *
+`;
+    const { rows } = await this.pool.query(sql, [
+      q.id,
+      q.parte,
+      q.modulo_numero,
+      q.modulo_titulo,
+      q.numero,
+      q.dificuldade,
+      q.enunciado,
+      q.codigo_placa,
+      q.alternativa_correta,
+      q.comentario,
+      q.alternativas_incorretas,
+      q.fonte,
+    ]);
+    return mapRow(rows[0]);
+  }
+
+  async deleteById(id: string): Promise<boolean> {
+    const r = await this.pool.query(`DELETE FROM questions WHERE id = $1`, [id]);
+    return (r.rowCount ?? 0) > 0;
+  }
+
   async listModules(): Promise<ModuleSummary[]> {
     const sql = `
       SELECT

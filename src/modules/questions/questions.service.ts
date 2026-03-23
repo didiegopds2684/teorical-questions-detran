@@ -32,4 +32,19 @@ export class QuestionsService {
   async modules(): Promise<ModuleSummary[]> {
     return this.repo.listModules();
   }
+
+  async upsert(question: Question): Promise<Question> {
+    return this.repo.upsert(question);
+  }
+
+  async deleteById(id: string): Promise<boolean> {
+    return this.repo.deleteById(id);
+  }
+
+  async importMany(questions: Question[]): Promise<{ imported: number }> {
+    for (const q of questions) {
+      await this.repo.upsert(q);
+    }
+    return { imported: questions.length };
+  }
 }
