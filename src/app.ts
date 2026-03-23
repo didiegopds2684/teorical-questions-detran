@@ -19,14 +19,17 @@ function loadOpenApiSpec(): Record<string, unknown> {
   return YAML.parse(raw) as Record<string, unknown>;
 }
 
-export function createApp(pool?: pg.Pool): express.Application {
+/** Só `/health` — sem env nem DB. O servidor pode fazer `listen` antes de `loadEnv` (Railway). */
+export function createLivenessApp(): express.Application {
   const app = express();
-
-  // Antes de Helmet/CORS: o healthcheck da Railway não deve depender de middleware
   app.get("/health", (_req, res) => {
     res.status(200).json({ status: "ok" });
   });
+  return app;
+}
 
+/** Rotas e middleware completos (chama `loadEnv` / pool). */
+export function configureApp(app: express.Application, pool?: pg.Pool): void {
   const p = pool ?? getPool();
   const repo = new QuestionsRepository(p);
   const questionsService = new QuestionsService(repo);
@@ -61,5 +64,10 @@ export function createApp(pool?: pg.Pool): express.Application {
   app.use("/questions", createQuestionsRouter(questionsService));
 
   app.use(errorHandler);
+}
+
+export function createApp(pool?: pg.Pool): express.Application {
+  const app = createLivenessApp();
+  configureApp(app, pool);
   return app;
 }
