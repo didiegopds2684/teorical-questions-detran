@@ -113,6 +113,8 @@ A imagem não inclui dados: use `import:questions` uma vez no ambiente (job manu
 
 ## Deploy no Railway
 
+**Nome do serviço no Railway:** `teoretical-questions-detran` (API de questões teóricas DETRAN).
+
 1. Crie um projeto e conecte o repositório (a API está na **raiz** do repo).
 2. Adicione o recurso **PostgreSQL** ao projeto (botão **New** → **Database** → Postgres).
 3. **Ligue o `DATABASE_URL` ao serviço da API** (passo que costuma faltar):
@@ -124,7 +126,7 @@ A imagem não inclui dados: use `import:questions` uma vez no ambiente (job manu
 6. **Primeiro deploy**: após o banco vazio, rode **uma vez** o import das questões, por exemplo:
 
    ```bash
-   railway run --service <seu-serviço> npm run import:questions
+   railway run --service teoretical-questions-detran npm run import:questions
    ```
 
    (ou job one-off no dashboard), com `QUESTIONS_JSON_PATH` apontando para o JSON se necessário.

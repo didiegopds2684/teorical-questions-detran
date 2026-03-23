@@ -18,6 +18,10 @@ const envSchema = z.object({
     .enum(["true", "false"])
     .optional()
     .transform((v) => v !== "false"),
+  API_BASE_URL: z
+    .string()
+    .url()
+    .optional(),
   QUESTIONS_JSON_PATH: z.string().optional(),
   ADMIN_API_KEY: z.string().min(16),
 });

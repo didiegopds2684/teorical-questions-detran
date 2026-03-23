@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import cors from "cors";
 import express from "express";
+import type { Request } from "express";
 import type pg from "pg";
 import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
@@ -18,7 +19,25 @@ import { QuestionsService } from "./modules/questions/questions.service.js";
 function loadOpenApiSpec(): Record<string, unknown> {
   const path = join(process.cwd(), "openapi", "openapi.yaml");
   const raw = readFileSync(path, "utf-8");
-  return YAML.parse(raw) as Record<string, unknown>;
+  const spec = YAML.parse(raw) as Record<string, unknown>;
+  const env = getEnv();
+
+  if (env.API_BASE_URL) {
+    spec.servers = [
+      {
+        url: env.API_BASE_URL,
+        description: "Servidor público",
+      },
+    ];
+  }
+
+  return spec;
+}
+
+function detectBaseUrl(req: Request): string {
+  const forwardedProto = req.header("x-forwarded-proto");
+  const proto = forwardedProto ?? req.protocol ?? "http";
+  return `${proto}://${req.get("host")}`;
 }
 
 /** Só `/health` — sem env nem DB. O servidor pode fazer `listen` antes de `loadEnv` (Railway). */
@@ -44,15 +63,36 @@ export function configureApp(app: express.Application, pool?: pg.Pool): void {
   );
   app.use(cors());
   app.use(express.json({ limit: "1mb" }));
+  app.set("trust proxy", true);
 
   const openApiSpec = loadOpenApiSpec();
 
   app.get("/openapi.json", (_req, res) => {
-    res.json(openApiSpec);
+    const env = getEnv();
+    const baseUrl = env.API_BASE_URL ?? detectBaseUrl(_req);
+    const spec = {
+      ...openApiSpec,
+      servers: [
+        {
+          url: baseUrl,
+          description: "Servidor público",
+        },
+      ],
+    };
+    res.json(spec);
   });
 
   if (env.ENABLE_SWAGGER) {
-    app.use("/docs", swaggerUi.serve, swaggerUi.setup(openApiSpec, { customSiteTitle: "Autocurso API" }));
+    app.use(
+      "/docs",
+      swaggerUi.serve,
+      swaggerUi.setup(undefined, {
+        customSiteTitle: "Autocurso API",
+        swaggerOptions: {
+          url: "/openapi.json",
+        },
+      }),
+    );
   }
 
   app.get(

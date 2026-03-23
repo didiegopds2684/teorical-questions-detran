@@ -1,4 +1,5 @@
 # Railway: repositório com a API na raiz (Dockerfile).
+# Serviço no Railway: teoretical-questions-detran
 # Adicione o plugin PostgreSQL; DATABASE_URL e PORT são injetados automaticamente.
 
 [build]

@@ -2,6 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { getPool, closePool } from "./pool.js";
 import { loadEnv } from "../config/env.js";
+import { seedQuestionsIfEmpty } from "./seed-questions.js";
 
 const MIGRATIONS_TABLE = `
 CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -55,6 +56,8 @@ export async function runMigrations(): Promise<void> {
       client.release();
     }
   }
+
+  await seedQuestionsIfEmpty();
 }
 
 async function main(): Promise<void> {

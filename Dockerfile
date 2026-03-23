@@ -6,6 +6,7 @@ RUN npm ci
 COPY tsconfig.json tsconfig.build.json ./
 COPY openapi ./openapi
 COPY migrations ./migrations
+COPY tools/extractor/data ./tools/extractor/data
 COPY src ./src
 RUN npm run build
 
@@ -18,5 +19,6 @@ RUN npm ci --omit=dev
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/openapi ./openapi
 COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /app/tools/extractor/data ./tools/extractor/data
 EXPOSE 3000
 CMD ["node", "dist/server.js"]
