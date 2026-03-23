@@ -1,0 +1,314 @@
+openapi: 3.0.3
+info:
+  title: Autocurso API — Perguntas
+  version: 1.0.0
+  description: |
+    API REST para consulta ao banco de questões extraído do material de estudo.
+  contact:
+    name: Autocurso
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+servers:
+  - url: "{baseUrl}"
+    description: Servidor configurável (dev ou produção)
+    variables:
+      baseUrl:
+        default: http://127.0.0.1:3000
+tags:
+  - name: health
+    description: Saúde do serviço
+  - name: questions
+    description: Questões
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+  /openapi.json:
+    get:
+      operationId: getOpenApiJson
+      tags: [health]
+      summary: Especificação OpenAPI (JSON)
+      responses:
+        "200":
+          description: Documento OpenAPI
+          content:
+            application/json:
+              schema:
+                type: object
+  /questions:
+    get:
+      operationId: listQuestions
+      tags: [questions]
+      summary: Lista questões com paginação e filtros
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - name: parte
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: modulo_numero
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: dificuldade
+          in: query
+          schema:
+            $ref: "#/components/schemas/Dificuldade"
+        - name: q
+          in: query
+          description: Busca textual no enunciado (ILIKE)
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuestionListResponse"
+        "400":
+          description: Parâmetros inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /questions/random:
+    get:
+      operationId: getRandomQuestion
+      tags: [questions]
+      summary: Uma questão aleatória (filtros opcionais)
+      parameters:
+        - name: parte
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: modulo_numero
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: dificuldade
+          in: query
+          schema:
+            $ref: "#/components/schemas/Dificuldade"
+        - name: q
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Questão encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+        "400":
+          description: Parâmetros inválidos
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Nenhuma questão com os filtros
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /questions/{id}:
+    get:
+      operationId: getQuestionById
+      tags: [questions]
+      summary: Detalhe de uma questão por id
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Questão
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Question"
+        "404":
+          description: Não encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+  /modules:
+    get:
+      operationId: listModules
+      tags: [questions]
+      summary: Módulos com contagem de questões
+      responses:
+        "200":
+          description: Lista de módulos
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ModuleSummary"
+        "500":
+          $ref: "#/components/responses/InternalError"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Reservado para futuras rotas autenticadas
+  parameters:
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+  responses:
+    InternalError:
+      description: Erro interno
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    Dificuldade:
+      type: string
+      enum: [facil, intermediario, dificil]
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: ok
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, details]
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+            details:
+              type: object
+              nullable: true
+    Question:
+      type: object
+      required:
+        - id
+        - parte
+        - modulo_numero
+        - modulo_titulo
+        - numero
+        - dificuldade
+        - enunciado
+        - alternativa_correta
+        - comentario
+        - alternativas_incorretas
+        - fonte
+      properties:
+        id:
+          type: string
+        parte:
+          type: integer
+        modulo_numero:
+          type: integer
+        modulo_titulo:
+          type: string
+        numero:
+          type: integer
+        dificuldade:
+          $ref: "#/components/schemas/Dificuldade"
+        enunciado:
+          type: string
+        codigo_placa:
+          type: string
+          nullable: true
+        alternativa_correta:
+          type: string
+        comentario:
+          type: string
+        alternativas_incorretas:
+          type: array
+          items:
+            type: string
+        fonte:
+          type: string
+    PaginationMeta:
+      type: object
+      required: [page, limit, total, total_pages]
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        total_pages:
+          type: integer
+    QuestionListResponse:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Question"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+    ModuleSummary:
+      type: object
+      required: [parte, modulo_numero, modulo_titulo, question_count]
+      properties:
+        parte:
+          type: integer
+        modulo_numero:
+          type: integer
+        modulo_titulo:
+          type: string
+        question_count:
+          type: integer
+security: []
