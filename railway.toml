@@ -7,5 +7,6 @@ dockerfilePath = "Dockerfile"
 
 [deploy]
 healthcheckPath = "/health"
-healthcheckTimeout = 30
+# Migrações + primeira conexão ao Postgres podem exceder 30s no cold start
+healthcheckTimeout = 120
 restartPolicyType = "ON_FAILURE"
