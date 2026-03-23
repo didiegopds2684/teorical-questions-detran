@@ -8,16 +8,20 @@ Este repositório contém o PDF **Banco Nacional de Questões** (CNH) e um scrip
 
 ## Instalação
 
+Na pasta `tools/extractor` (este módulo fica separado da API na raiz do repositório):
+
 ```bash
+cd tools/extractor
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 ```
 
 ## Extração
 
-Na raiz do projeto (onde está `Banco Nacional de Questões.pdf`):
+Com o PDF **Banco Nacional de Questões.pdf** nesta pasta (`tools/extractor`):
 
 ```bash
+cd tools/extractor
 .venv/bin/python scripts/extract_questions.py
 ```
 
