@@ -21,6 +21,12 @@ function loadOpenApiSpec(): Record<string, unknown> {
 
 export function createApp(pool?: pg.Pool): express.Application {
   const app = express();
+
+  // Antes de Helmet/CORS: o healthcheck da Railway não deve depender de middleware
+  app.get("/health", (_req, res) => {
+    res.status(200).json({ status: "ok" });
+  });
+
   const p = pool ?? getPool();
   const repo = new QuestionsRepository(p);
   const questionsService = new QuestionsService(repo);
@@ -35,10 +41,6 @@ export function createApp(pool?: pg.Pool): express.Application {
   app.use(express.json({ limit: "1mb" }));
 
   const openApiSpec = loadOpenApiSpec();
-
-  app.get("/health", (_req, res) => {
-    res.json({ status: "ok" });
-  });
 
   app.get("/openapi.json", (_req, res) => {
     res.json(openApiSpec);

@@ -5,7 +5,11 @@ config();
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  PORT: z.coerce.number().int().positive().default(3000),
+  // Railway injects PORT; an empty string would coerce to 0 and fail — treat as unset
+  PORT: z.preprocess(
+    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+    z.coerce.number().int().positive().default(3000),
+  ),
   DATABASE_URL: z
     .string()
     .min(1)

@@ -9,18 +9,20 @@ function listen(
   port: number,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    server.listen({ port, host: "0.0.0.0" }, () => resolve());
+    // :: + ipv6Only: false aceita IPv4 e IPv6 (probes internos da Railway / Docker)
+    server.listen({ port, host: "::", ipv6Only: false }, () => resolve());
     server.once("error", reject);
   });
 }
 
 async function main(): Promise<void> {
   const env = loadEnv();
+  const port = env.PORT;
   const app = createApp();
   const server = createServer(app);
 
-  await listen(server, env.PORT);
-  console.log(`API listening on 0.0.0.0:${env.PORT}`);
+  await listen(server, port);
+  console.log(`API listening on [::]:${port} (dual-stack)`);
   if (env.ENABLE_SWAGGER) {
     console.log(`OpenAPI UI: http://localhost:${env.PORT}/docs`);
   }
