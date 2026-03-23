@@ -10,6 +10,8 @@ import { errorHandler, asyncHandler } from "./common/error-handler.js";
 import { getEnv } from "./config/env.js";
 import { getPool } from "./db/pool.js";
 import { createQuestionsRouter } from "./modules/questions/questions.router.js";
+import { createAdminQuestionsRouter } from "./modules/questions/admin-questions.router.js";
+import { requireAdminApiKey } from "./middleware/require-admin-api-key.js";
 import { QuestionsRepository } from "./modules/questions/questions.repository.js";
 import { QuestionsService } from "./modules/questions/questions.service.js";
 
@@ -62,6 +64,8 @@ export function configureApp(app: express.Application, pool?: pg.Pool): void {
   );
 
   app.use("/questions", createQuestionsRouter(questionsService));
+
+  app.use("/admin/questions", requireAdminApiKey, createAdminQuestionsRouter(questionsService));
 
   app.use(errorHandler);
 }
