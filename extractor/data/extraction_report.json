@@ -1,0 +1,13 @@
+{
+  "pdf": "/Users/lucianodiisouza/Documents/projects/autocurso-2000/Banco Nacional de Questões.pdf",
+  "total_questions": 1500,
+  "outputs": {
+    "json": "/Users/lucianodiisouza/Documents/projects/autocurso-2000/data/questions.json",
+    "jsonl": "/Users/lucianodiisouza/Documents/projects/autocurso-2000/data/questions.jsonl",
+    "csv": "/Users/lucianodiisouza/Documents/projects/autocurso-2000/data/questions.csv"
+  },
+  "parse_warnings": [],
+  "validation_issues": [],
+  "parse_warnings_count": 0,
+  "validation_issues_count": 0
+}
