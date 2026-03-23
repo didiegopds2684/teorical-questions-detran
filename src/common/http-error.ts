@@ -1,6 +1,7 @@
 export type ErrorCode =
   | "VALIDATION_ERROR"
   | "NOT_FOUND"
+  | "UNAUTHORIZED"
   | "INTERNAL_ERROR";
 
 export class HttpError extends Error {
