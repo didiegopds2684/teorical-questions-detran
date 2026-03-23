@@ -6,5 +6,9 @@ coverage
 *.log
 .DS_Store
 
-# Extração PDF (Python); não faz parte da imagem da API
-tools/
+# Extração PDF (Python); manter tools/extractor/data para o COPY do Dockerfile
+tools/extractor/.venv/
+tools/extractor/scripts/
+tools/extractor/*.pdf
+tools/extractor/requirements.txt
+tools/extractor/README.md
