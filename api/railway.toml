@@ -1,0 +1,11 @@
+# Railway: set the service root directory to `api` if the repo root is the monorepo.
+# Add the PostgreSQL plugin; DATABASE_URL and PORT are injected automatically.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"
