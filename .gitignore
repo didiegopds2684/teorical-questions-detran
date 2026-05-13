@@ -13,3 +13,6 @@ coverage/
 
 # Ferramenta Python (extractor)
 tools/extractor/.venv/
+
+# Imagens de placas (baixar com: bash tools/download-placas.sh)
+frontend/public/placas/

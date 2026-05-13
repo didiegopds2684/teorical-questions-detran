@@ -28,6 +28,21 @@ function seededShuffle(arr: string[], seed: number): string[] {
   return out;
 }
 
+function PlacaImg({ codigo }: { codigo: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return <div className="q-placa-img q-placa-img--fallback">{codigo}</div>;
+  }
+  return (
+    <img
+      src={`/placas/${codigo}.svg`}
+      alt={`Placa ${codigo}`}
+      className="q-placa-img"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 export default function QuestionCard({
   question,
   onAnswer,
@@ -92,7 +107,9 @@ export default function QuestionCard({
 
       {question.codigo_placa && (
         <div className="q-placa">
-          <div className="q-placa-img">placa</div>
+          {question.codigo_placa.split(' e ').map((code) => (
+            <PlacaImg key={code} codigo={code.trim()} />
+          ))}
           <div className="q-placa-info">
             <span className="q-placa-label">Placa referida</span>
             <span className="q-placa-code">{question.codigo_placa}</span>
