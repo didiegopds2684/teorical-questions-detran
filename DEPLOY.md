@@ -39,8 +39,10 @@ O arquivo `render.yaml` na raiz do projeto já configura tudo automaticamente.
 5. O Render vai ler o `render.yaml` e mostrar os serviços que serão criados:
    - `detran-api` — API Node.js
    - `detran-frontend` — site estático React
-6. Na tela de configuração, preencha a variável obrigatória:
+6. Na tela de configuração, preencha as variáveis obrigatórias:
    - **`DATABASE_URL`** → cole a Connection String do Neon (Passo 1)
+   - **`VITE_API_URL`** → cole `https://detran-api.onrender.com`
+     _(o Render forma a URL como `https://<nome-do-serviço>.onrender.com`)_
 7. Clique em **"Apply"** para iniciar o deploy.
 
 ---
