@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FilterPanel from '../components/FilterPanel';
-import type { Filters } from '../types';
+import { ArrowRight, Target, Stack } from '../components/Icons';
+import { fetchModules } from '../api/questions';
+import type { Filters, ModuleSummary } from '../types';
 
 type Mode = 'individual' | 'bloco';
-
 const BATCH_OPTIONS = [5, 10, 20, 30];
 
 export default function Home() {
@@ -12,6 +13,14 @@ export default function Home() {
   const [mode, setMode] = useState<Mode>('individual');
   const [filters, setFilters] = useState<Filters>({});
   const [batchCount, setBatchCount] = useState(10);
+  const [modules, setModules] = useState<ModuleSummary[]>([]);
+
+  useEffect(() => {
+    fetchModules().then(setModules).catch(console.error);
+  }, []);
+
+  const totalQuestoes = modules.reduce((s, m) => s + m.question_count, 0);
+  const totalModulos = modules.length;
 
   function start() {
     const params = new URLSearchParams();
@@ -19,87 +28,130 @@ export default function Home() {
     if (filters.modulo_numero) params.set('modulo_numero', String(filters.modulo_numero));
     if (filters.dificuldade) params.set('dificuldade', filters.dificuldade);
     if (mode === 'bloco') params.set('count', String(batchCount));
-
     const route = mode === 'individual' ? '/simulado' : '/simulado/bloco';
     navigate(`${route}?${params.toString()}`);
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-slate-800">Simulado Detran</h1>
-        <p className="text-slate-500 mt-2">Escolha o modo e os filtros para começar</p>
+    <div>
+      <section className="hero">
+        <div className="hero-eyebrow">
+          <span className="lane-mini" />
+          <span className="eyebrow">Banco de questões</span>
+        </div>
+        <h1 className="hero-title">
+          Estude no seu ritmo. <em>Vá em frente.</em>
+        </h1>
+        <p className="hero-sub">
+          Treine para a prova teórica com questões organizadas por parte, módulo e dificuldade.
+          Escolha o ritmo e o tipo de simulado abaixo.
+        </p>
+      </section>
+
+      <div className="stats-strip" style={{ marginTop: 28 }}>
+        <div className="stat">
+          <div className="stat-label">Questões disponíveis</div>
+          <div className="stat-value tnum">
+            {totalQuestoes || '—'}<small>no banco</small>
+          </div>
+        </div>
+        <div className="stat">
+          <div className="stat-label">Módulos</div>
+          <div className="stat-value tnum">
+            {totalModulos || '—'}<small>cobertos</small>
+          </div>
+        </div>
+        <div className="stat">
+          <div className="stat-label">Aprovação mínima</div>
+          <div className="stat-value tnum">
+            70<span style={{ fontFamily: 'var(--font-mono)', fontSize: 24, color: 'var(--ink-3)', marginLeft: 2 }}>%</span>
+          </div>
+        </div>
       </div>
 
-      {/* Modo */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="section-title">
+        <h2>01 — Escolha o modo</h2>
+        <span className="lane-line" />
+      </div>
+
+      <div className="modes">
         <button
           onClick={() => setMode('individual')}
-          className={`rounded-2xl border-2 p-5 text-left transition-all ${
-            mode === 'individual'
-              ? 'border-blue-600 bg-blue-50'
-              : 'border-slate-200 bg-white hover:border-blue-300'
-          }`}
+          className={`mode ${mode === 'individual' ? 'active' : ''}`}
         >
-          <div className="text-2xl mb-2">🎯</div>
-          <div className="font-semibold text-slate-800">Questão por questão</div>
-          <div className="text-sm text-slate-500 mt-1">
-            Veja o resultado imediatamente após cada resposta
+          <span className="mode-glyph"><Target /></span>
+          <div>
+            <div className="mode-title">Questão por questão</div>
+            <div className="mode-desc">
+              Feedback imediato após cada resposta. Ideal pra estudar pelo comentário.
+            </div>
           </div>
         </button>
 
         <button
           onClick={() => setMode('bloco')}
-          className={`rounded-2xl border-2 p-5 text-left transition-all ${
-            mode === 'bloco'
-              ? 'border-blue-600 bg-blue-50'
-              : 'border-slate-200 bg-white hover:border-blue-300'
-          }`}
+          className={`mode ${mode === 'bloco' ? 'active' : ''}`}
         >
-          <div className="text-2xl mb-2">📋</div>
-          <div className="font-semibold text-slate-800">Bloco de questões</div>
-          <div className="text-sm text-slate-500 mt-1">
-            Responda todas e veja o gabarito no final
+          <span className="mode-glyph"><Stack /></span>
+          <div>
+            <div className="mode-title">Bloco de questões</div>
+            <div className="mode-desc">
+              Responda tudo de uma vez e veja o gabarito no final — simula a prova real.
+            </div>
           </div>
         </button>
       </div>
 
-      {/* Filtros */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6">
-        <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-4">
-          Filtros
-        </h2>
+      <div className="section-title">
+        <h2>02 — Refine (opcional)</h2>
+        <span className="lane-line" />
+      </div>
+
+      <div className="card">
         <FilterPanel value={filters} onChange={setFilters} />
 
         {mode === 'bloco' && (
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-slate-700 mb-1">
-              Número de questões
-            </label>
-            <div className="flex gap-2">
-              {BATCH_OPTIONS.map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setBatchCount(n)}
-                  className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
-                    batchCount === n
-                      ? 'border-blue-600 bg-blue-600 text-white'
-                      : 'border-slate-300 bg-white text-slate-700 hover:border-blue-400'
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
+          <>
+            <hr className="lane" style={{ margin: '20px 0' }} />
+            <div
+              className="field"
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: 12,
+              }}
+            >
+              <div>
+                <div className="field-label">Quantas questões?</div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--ink-3)', marginTop: 2 }}>
+                  A prova oficial costuma ter 30.
+                </div>
+              </div>
+              <div className="chips">
+                {BATCH_OPTIONS.map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setBatchCount(n)}
+                    className={`chip ${batchCount === n ? 'active' : ''}`}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
 
       <button
         onClick={start}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-2xl text-lg transition-colors"
+        className="btn btn-accent btn-lg btn-block"
+        style={{ marginTop: 28 }}
       >
         Começar simulado
+        <ArrowRight />
       </button>
     </div>
   );

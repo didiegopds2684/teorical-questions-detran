@@ -1,37 +1,55 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Question } from '../types';
-import { dificuldadeLabel } from '../api/questions';
+import { Check, X } from './Icons';
 
 const LETTERS = ['A', 'B', 'C', 'D', 'E'];
 
-const DIFICULDADE_COLOR = {
-  facil: 'bg-green-100 text-green-800',
-  intermediario: 'bg-yellow-100 text-yellow-800',
-  dificil: 'bg-red-100 text-red-800',
-} as const;
+const DIFFICULTY_TAG: Record<string, { cls: string; label: string }> = {
+  facil: { cls: 'tag tag-accent', label: 'Fácil' },
+  intermediario: { cls: 'tag tag-warn', label: 'Intermediário' },
+  dificil: { cls: 'tag tag-err', label: 'Difícil' },
+};
 
 interface Props {
   question: Question;
-  showResult?: boolean;
   onAnswer?: (correct: boolean, chosen: string) => void;
-  /** quando true, exibe apenas gabarito sem permitir nova escolha */
   reviewMode?: boolean;
   chosenAnswer?: string;
+  index?: number;
+  total?: number;
+}
+
+function seededShuffle(arr: string[], seed: number): string[] {
+  const out = [...arr];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = (seed + i * 31) % (i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
 }
 
 export default function QuestionCard({
   question,
-  showResult = false,
   onAnswer,
   reviewMode = false,
   chosenAnswer,
+  index,
+  total,
 }: Props) {
   const [chosen, setChosen] = useState<string | null>(chosenAnswer ?? null);
-  const [answered, setAnswered] = useState(reviewMode || showResult);
+  const [answered, setAnswered] = useState(reviewMode);
+
+  useEffect(() => {
+    setChosen(chosenAnswer ?? null);
+    setAnswered(reviewMode);
+    // chosenAnswer intentionally omitted — only sync on question/mode change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [question.id, reviewMode]);
 
   const alternatives = useMemo(() => {
     const all = [question.alternativa_correta, ...question.alternativas_incorretas];
-    return all.sort(() => Math.random() - 0.5);
+    const seed = question.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+    return seededShuffle(all, seed);
   }, [question.id]);
 
   function handleSelect(alt: string) {
@@ -41,73 +59,98 @@ export default function QuestionCard({
     onAnswer?.(alt === question.alternativa_correta, alt);
   }
 
-  function altClass(alt: string) {
-    if (!answered && !reviewMode) {
-      return 'border-slate-200 hover:border-blue-400 hover:bg-blue-50 cursor-pointer';
-    }
-    const isCorrect = alt === question.alternativa_correta;
-    const isChosen = alt === (reviewMode ? chosenAnswer : chosen);
-    if (isCorrect) return 'border-green-500 bg-green-50';
-    if (isChosen && !isCorrect) return 'border-red-400 bg-red-50';
-    return 'border-slate-200 opacity-60';
+  function altState(alt: string): string | undefined {
+    const sel = reviewMode ? chosenAnswer : chosen;
+    if (!answered) return undefined;
+    if (alt === question.alternativa_correta) return 'correct';
+    if (alt === sel) return 'wrong';
+    return 'dim';
   }
 
-  const correct = (reviewMode ? chosenAnswer : chosen) === question.alternativa_correta;
+  const isCorrect = (reviewMode ? chosenAnswer : chosen) === question.alternativa_correta;
+  const diff = DIFFICULTY_TAG[question.dificuldade] ?? DIFFICULTY_TAG.facil;
+
+  const plaqueta =
+    index !== undefined
+      ? `${String(index + 1).padStart(2, '0')}${total !== undefined ? ' / ' + String(total).padStart(2, '0') : ''}`
+      : `Nº ${String(question.numero).padStart(3, '0')}`;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex gap-2 flex-wrap text-xs">
-          <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
-            Parte {question.parte} · Módulo {question.modulo_numero}
+    <article className="question">
+      <header className="q-header">
+        <div className="q-tags">
+          <span className="plaqueta">{plaqueta}</span>
+          <span className="tag">
+            Parte {question.parte} · M{question.modulo_numero}
           </span>
-          <span
-            className={`px-2 py-0.5 rounded-full ${DIFICULDADE_COLOR[question.dificuldade]}`}
-          >
-            {dificuldadeLabel[question.dificuldade]}
-          </span>
+          <span className={diff.cls}>{diff.label}</span>
         </div>
-        <span className="text-xs text-slate-400 shrink-0">#{question.numero}</span>
-      </div>
+        <span className="tag">{question.modulo_titulo}</span>
+      </header>
 
-      <p className="text-slate-800 font-medium leading-relaxed">{question.enunciado}</p>
+      <h2 className="q-enunciado">{question.enunciado}</h2>
 
       {question.codigo_placa && (
-        <p className="text-xs text-slate-500 italic">Placa: {question.codigo_placa}</p>
-      )}
-
-      <ul className="flex flex-col gap-2">
-        {alternatives.map((alt, i) => (
-          <li
-            key={alt}
-            onClick={() => handleSelect(alt)}
-            className={`flex gap-3 items-start border rounded-xl px-4 py-3 text-sm transition-all ${altClass(alt)}`}
-          >
-            <span className="font-bold text-slate-500 shrink-0">{LETTERS[i]}.</span>
-            <span>{alt}</span>
-          </li>
-        ))}
-      </ul>
-
-      {(answered || reviewMode) && (
-        <div
-          className={`rounded-xl px-4 py-3 text-sm border ${
-            correct
-              ? 'bg-green-50 border-green-200 text-green-800'
-              : 'bg-red-50 border-red-200 text-red-800'
-          }`}
-        >
-          <p className="font-semibold mb-1">{correct ? '✅ Correto!' : '❌ Incorreto'}</p>
-          <p className="text-slate-700">{question.comentario}</p>
-          {!correct && (
-            <p className="mt-1 text-green-700 text-xs">
-              Resposta correta: {question.alternativa_correta}
-            </p>
-          )}
+        <div className="q-placa">
+          <div className="q-placa-img">placa</div>
+          <div className="q-placa-info">
+            <span className="q-placa-label">Placa referida</span>
+            <span className="q-placa-code">{question.codigo_placa}</span>
+          </div>
         </div>
       )}
 
-      <p className="text-xs text-slate-400">Fonte: {question.fonte}</p>
-    </div>
+      <ul className="alts" role="radiogroup" aria-label="Alternativas">
+        {alternatives.map((alt, i) => {
+          const state = altState(alt);
+          const sel = reviewMode ? chosenAnswer : chosen;
+          const isSelected = !answered && alt === sel;
+          return (
+            <li key={alt}>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={alt === sel}
+                disabled={answered}
+                onClick={() => handleSelect(alt)}
+                className="alt"
+                data-state={state ?? (isSelected ? 'selected' : undefined)}
+              >
+                <span className="alt-letter">{LETTERS[i]}</span>
+                <span className="alt-text">{alt}</span>
+                <span className="alt-mark">
+                  {state === 'correct' && <Check size={12} />}
+                  {state === 'wrong' && <X size={12} />}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+
+      {answered && (
+        <div className={`feedback ${isCorrect ? 'feedback-correct' : 'feedback-wrong'}`}>
+          <span className="feedback-glyph">
+            {isCorrect ? <Check size={16} /> : <X size={14} />}
+          </span>
+          <div>
+            <p className="feedback-title">
+              {isCorrect ? 'Resposta correta' : 'Não foi dessa vez'}
+            </p>
+            <p className="feedback-body">{question.comentario}</p>
+            {!isCorrect && (
+              <p className="feedback-hint">
+                Resposta correta: {question.alternativa_correta}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      <footer className="q-footer">
+        <span>Fonte · {question.fonte}</span>
+        <span>#{question.id.split('-')[0]}{question.numero}</span>
+      </footer>
+    </article>
   );
 }

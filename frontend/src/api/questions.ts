@@ -1,6 +1,7 @@
 import type { Dificuldade, Filters, ModuleSummary, Paginated, Question } from '../types';
 
-const BASE = '/api';
+// Em dev usa o proxy do Vite (/api → localhost:3000). Em prod usa VITE_API_URL (sem barra final).
+const BASE = import.meta.env.VITE_API_URL ?? '/api';
 
 function buildParams(filters: Filters & Record<string, unknown>): string {
   const p = new URLSearchParams();
@@ -56,4 +57,11 @@ export const dificuldadeLabel: Record<Dificuldade, string> = {
   facil: 'Fácil',
   intermediario: 'Intermediário',
   dificil: 'Difícil',
+};
+
+export const PARTE_TITLES: Record<number, string> = {
+  1: 'Legislação de trânsito',
+  2: 'Direção defensiva',
+  3: 'Primeiros socorros, meio ambiente e cidadania',
+  4: 'Mecânica básica',
 };

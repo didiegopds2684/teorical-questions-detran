@@ -1,5 +1,6 @@
 /* ===== Tokens ===== */
 :root {
+  /* base — overridden by data-theme + data-palette + data-density on <html> */
   --bg: #f4f1ea;
   --surface: #fdfbf6;
   --surface-2: #f0ece0;
@@ -365,7 +366,7 @@ ul { list-style: none; padding: 0; margin: 0; }
   opacity: 0.8;
 }
 
-/* ===== Plaqueta ===== */
+/* ===== Plaqueta — número de questão estilo placa de regulamentação ===== */
 .plaqueta {
   display: inline-flex;
   align-items: center;
@@ -382,7 +383,7 @@ ul { list-style: none; padding: 0; margin: 0; }
   min-width: 56px;
 }
 
-/* ===== Lane dashed divider ===== */
+/* ===== Lane dashed divider — referência sutil a faixa de rodovia ===== */
 .lane {
   display: block;
   border: none;
@@ -1150,7 +1151,7 @@ ul { list-style: none; padding: 0; margin: 0; }
   letter-spacing: 0.04em;
 }
 
-/* ===== Subtle decorative lane stripe ===== */
+/* ===== Subtle decorative lane stripe — top-left of page intros ===== */
 .lane-stripe {
   display: flex;
   gap: 6px;
@@ -1171,4 +1172,5 @@ ul { list-style: none; padding: 0; margin: 0; }
   border-radius: 6px;
 }
 
+/* tabular nums everywhere it counts */
 .tnum { font-variant-numeric: tabular-nums; }

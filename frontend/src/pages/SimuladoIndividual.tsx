@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchRandom } from '../api/questions';
 import QuestionCard from '../components/QuestionCard';
+import { ArrowLeft, ArrowRight } from '../components/Icons';
 import type { Filters, Question } from '../types';
 
 export default function SimuladoIndividual() {
@@ -30,52 +31,49 @@ export default function SimuladoIndividual() {
       .then(setQuestion)
       .catch((e: Error) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [JSON.stringify(filters)]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.toString()]);
 
   useEffect(() => {
     loadNext();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleAnswer(correct: boolean) {
     setAnswered(true);
-    setScore((s) => ({
-      correct: s.correct + (correct ? 1 : 0),
-      total: s.total + 1,
-    }));
+    setScore((s) => ({ correct: s.correct + (correct ? 1 : 0), total: s.total + 1 }));
   }
 
+  const accuracy = score.total > 0 ? Math.round((score.correct / score.total) * 100) : null;
+
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header com placar */}
-      <div className="flex items-center justify-between">
-        <button
-          onClick={() => navigate('/')}
-          className="text-sm text-slate-500 hover:text-slate-700"
-        >
-          ← Voltar
-        </button>
-        <div className="text-sm text-slate-600">
-          {score.total > 0 && (
-            <span>
-              Acertos:{' '}
-              <strong className="text-green-600">
-                {score.correct}/{score.total}
-              </strong>
-            </span>
-          )}
+    <div>
+      <div className="sim-bar">
+        <div className="sim-bar-left">
+          <button className="btn btn-ghost" onClick={() => navigate('/')} aria-label="Voltar">
+            <ArrowLeft size={14} /> Voltar
+          </button>
+          <div className="sim-bar-info">
+            <span className="label">Modo</span>
+            <span className="value">Questão por questão</span>
+          </div>
         </div>
+        <span className={`score-bubble ${score.total === 0 ? 'empty' : ''}`}>
+          {score.total === 0
+            ? 'Aguardando'
+            : `${score.correct}/${score.total} · ${accuracy}%`}
+        </span>
       </div>
 
-      {loading && (
-        <div className="text-center py-16 text-slate-400">Carregando questão...</div>
-      )}
+      {loading && <div className="center-state">Carregando questão...</div>}
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-6 text-center">
-          <p className="font-medium">{error}</p>
+        <div className="card" style={{ textAlign: 'center' }}>
+          <p style={{ color: 'var(--err-ink)', fontWeight: 500 }}>{error}</p>
           <button
+            className="btn btn-outline"
             onClick={() => navigate('/')}
-            className="mt-3 text-sm underline"
+            style={{ marginTop: 12 }}
           >
             Ajustar filtros
           </button>
@@ -89,9 +87,11 @@ export default function SimuladoIndividual() {
       {answered && !loading && (
         <button
           onClick={loadNext}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-2xl text-base transition-colors"
+          className="btn btn-accent btn-lg btn-block"
+          style={{ marginTop: 20 }}
         >
-          Próxima questão →
+          Próxima questão
+          <ArrowRight />
         </button>
       )}
     </div>

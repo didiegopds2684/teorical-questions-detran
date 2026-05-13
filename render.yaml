@@ -1,0 +1,50 @@
+# Render Blueprint — deploy API + frontend com um único arquivo.
+# Docs: https://render.com/docs/blueprint-spec
+#
+# Antes de fazer o deploy:
+#   1. Crie um banco no Neon (neon.tech) e copie a DATABASE_URL.
+#   2. No dashboard do Render, conecte o repositório e selecione "Blueprint".
+#   3. Informe DATABASE_URL quando solicitado (marcado como sync: false abaixo).
+#   4. ADMIN_API_KEY é gerado automaticamente pelo Render.
+
+services:
+  # ── API (Express + PostgreSQL) ───────────────────────────────────────────────
+  - type: web
+    name: detran-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install && npm run build
+    startCommand: npm run migrate && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false                # informar manualmente no dashboard (vem do Neon)
+      - key: ADMIN_API_KEY
+        generateValue: true        # Render gera um valor aleatório seguro
+      - key: ENABLE_SWAGGER
+        value: false
+      - key: API_BASE_URL
+        fromService:
+          type: web
+          name: detran-api
+          property: hostWithScheme
+
+  # ── Frontend (React/Vite — site estático) ───────────────────────────────────
+  - type: web
+    name: detran-frontend
+    runtime: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL         # URL da API injetada no build do Vite
+        fromService:
+          type: web
+          name: detran-api
+          property: hostWithScheme
+    routes:
+      - type: rewrite             # necessário para o React Router funcionar
+        source: /*
+        destination: /index.html

@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchModules } from '../api/questions';
+import { fetchModules, PARTE_TITLES } from '../api/questions';
+import { ArrowRight } from '../components/Icons';
 import type { ModuleSummary } from '../types';
+
+function mockProgress(m: ModuleSummary) {
+  return (m.parte * 17 + m.modulo_numero * 41) % 100;
+}
 
 export default function Modules() {
   const navigate = useNavigate();
@@ -16,8 +21,8 @@ export default function Modules() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <p className="text-slate-500 text-center py-16">Carregando...</p>;
-  if (error) return <p className="text-red-500 text-center py-16">{error}</p>;
+  if (loading) return <div className="center-state">Carregando módulos...</div>;
+  if (error) return <div className="center-state" style={{ color: 'var(--err-ink)' }}>{error}</div>;
 
   const partes = [...new Set(modules.map((m) => m.parte))].sort((a, b) => a - b);
 
@@ -30,39 +35,63 @@ export default function Modules() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">Módulos</h1>
-        <p className="text-slate-500 mt-1">Escolha um módulo para iniciar um simulado</p>
+    <div>
+      <div className="page-intro">
+        <div className="lane-stripe">
+          <span /><span /><span />
+        </div>
+        <h1>Módulos</h1>
+        <p>
+          Escolha um módulo específico para focar seus estudos.
+          O simulado será individual com filtro aplicado.
+        </p>
       </div>
 
-      {partes.map((parte) => (
-        <div key={parte}>
-          <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
-            Parte {parte}
-          </h2>
-          <div className="flex flex-col gap-2">
-            {modules
-              .filter((m) => m.parte === parte)
-              .map((m) => (
-                <button
-                  key={m.modulo_numero}
-                  onClick={() => startModule(m)}
-                  className="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-5 py-4 hover:border-blue-400 hover:bg-blue-50 transition-all text-left"
-                >
-                  <div>
-                    <span className="font-medium text-slate-800">
-                      Módulo {m.modulo_numero} — {m.modulo_titulo}
+      {partes.map((parte) => {
+        const parteModules = modules.filter((m) => m.parte === parte);
+        return (
+          <section key={parte} className="parte-section">
+            <div className="parte-header">
+              <h2>
+                <em>Parte {String(parte).padStart(2, '0')}</em>
+                {PARTE_TITLES[parte] ?? ''}
+              </h2>
+              <span className="eyebrow">{parteModules.length} módulos</span>
+            </div>
+
+            <div>
+              {parteModules.map((m) => {
+                const pct = mockProgress(m);
+                return (
+                  <button
+                    key={m.modulo_numero}
+                    className="module-row"
+                    onClick={() => startModule(m)}
+                  >
+                    <span className="module-num">
+                      {String(m.modulo_numero).padStart(2, '0')}
                     </span>
-                  </div>
-                  <span className="text-sm text-slate-400 shrink-0 ml-4">
-                    {m.question_count} questões →
-                  </span>
-                </button>
-              ))}
-          </div>
-        </div>
-      ))}
+                    <div>
+                      <div className="module-title">{m.modulo_titulo}</div>
+                      <div className="module-meta">
+                        {m.question_count} questões
+                      </div>
+                    </div>
+                    <div className="module-progress">
+                      <div className="progress-track">
+                        <div className="progress-fill" style={{ width: pct + '%' }} />
+                      </div>
+                      <span className="module-arrow">
+                        <ArrowRight size={12} />
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }

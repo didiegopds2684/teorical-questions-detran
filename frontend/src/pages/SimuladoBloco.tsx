@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchBatch } from '../api/questions';
 import QuestionCard from '../components/QuestionCard';
+import { ArrowLeft, ArrowRight } from '../components/Icons';
 import type { Filters, Question } from '../types';
 
 type Status = 'loading' | 'answering' | 'finished' | 'error';
@@ -34,13 +35,15 @@ export default function SimuladoBloco() {
         setErrorMsg(e.message);
         setStatus('error');
       });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleAnswer(questionId: string, chosen: string) {
     setAnswers((prev) => ({ ...prev, [questionId]: chosen }));
   }
 
-  const allAnswered = questions.length > 0 && Object.keys(answers).length >= questions.length;
+  const answeredCount = Object.keys(answers).length;
+  const allAnswered = questions.length > 0 && answeredCount >= questions.length;
 
   const score = useMemo(() => {
     if (status !== 'finished') return null;
@@ -49,7 +52,7 @@ export default function SimuladoBloco() {
       if (answers[q.id] === q.alternativa_correta) correct++;
     }
     return { correct, total: questions.length };
-  }, [status]);
+  }, [status, questions, answers]);
 
   function finish() {
     setStatus('finished');
@@ -57,87 +60,119 @@ export default function SimuladoBloco() {
   }
 
   if (status === 'loading') {
-    return <div className="text-center py-16 text-slate-400">Carregando questões...</div>;
+    return <div className="center-state">Carregando questões...</div>;
   }
 
   if (status === 'error') {
     return (
-      <div className="text-center py-16">
-        <p className="text-red-600 font-medium">{errorMsg}</p>
-        <button onClick={() => navigate('/')} className="mt-3 text-blue-600 underline text-sm">
+      <div className="card" style={{ textAlign: 'center' }}>
+        <p style={{ color: 'var(--err-ink)', fontWeight: 500 }}>{errorMsg}</p>
+        <button
+          className="btn btn-outline"
+          onClick={() => navigate('/')}
+          style={{ marginTop: 12 }}
+        >
           Voltar ao início
         </button>
       </div>
     );
   }
 
+  const pct = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
+
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <button onClick={() => navigate('/')} className="text-sm text-slate-500 hover:text-slate-700">
-          ← Voltar
-        </button>
-        <span className="text-sm text-slate-500">
-          {Object.keys(answers).length}/{questions.length} respondidas
-        </span>
+    <div>
+      <div className="sim-bar">
+        <div className="sim-bar-left">
+          <button className="btn btn-ghost" onClick={() => navigate('/')} aria-label="Voltar">
+            <ArrowLeft size={14} /> Voltar
+          </button>
+          <div className="sim-bar-info">
+            <span className="label">Modo · Bloco</span>
+            <span className="value tnum">
+              {answeredCount}/{questions.length} respondidas
+            </span>
+          </div>
+        </div>
+        <div className="progress-bar">
+          <div style={{ width: pct + '%' }} />
+        </div>
       </div>
 
-      {/* Placar final */}
-      {status === 'finished' && score && (
-        <div
-          className={`rounded-2xl p-6 text-center border-2 ${
-            score.correct / score.total >= 0.7
-              ? 'bg-green-50 border-green-300'
-              : 'bg-red-50 border-red-300'
-          }`}
-        >
-          <p className="text-4xl font-bold">
-            {score.correct}/{score.total}
-          </p>
-          <p className="text-lg mt-1">
-            {Math.round((score.correct / score.total) * 100)}% de acertos
-          </p>
-          <p className="text-slate-500 mt-1">
-            {score.correct / score.total >= 0.7 ? '🎉 Aprovado!' : '😓 Continue praticando'}
-          </p>
-          <button
-            onClick={() => navigate('/')}
-            className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-xl text-sm font-medium hover:bg-blue-700"
-          >
-            Novo simulado
+      {status === 'finished' && score && (() => {
+        const pctScore = Math.round((score.correct / score.total) * 100);
+        const approved = score.correct / score.total >= 0.7;
+        const okPct = (score.correct / score.total) * 100;
+        const koPct = 100 - okPct;
+        return (
+          <div className="result">
+            <div className="result-score">
+              <div className="result-pct tnum">
+                {pctScore}<span className="pct-sign">%</span>
+              </div>
+              <div className="result-frac">{score.correct} de {score.total} acertos</div>
+            </div>
+            <div className="result-content">
+              <span className={`result-status ${approved ? 'approved' : 'failed'}`}>
+                <span
+                  style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor' }}
+                />
+                {approved ? 'Aprovado no critério' : 'Continue praticando'}
+              </span>
+              <p className="result-msg">
+                {approved
+                  ? 'Você ficou acima dos 70%. Está no caminho — repita módulos com mais erros para fixar.'
+                  : 'Faltou pouco. Revise o gabarito abaixo, foque nos módulos onde errou mais e tente de novo.'}
+              </p>
+              <div className="breakdown" aria-hidden="true">
+                <div className="ok" style={{ width: okPct + '%' }} />
+                <div className="ko" style={{ width: koPct + '%' }} />
+              </div>
+              <div className="result-actions">
+                <button className="btn btn-primary" onClick={() => navigate('/')}>
+                  Novo simulado <ArrowRight />
+                </button>
+                <button
+                  className="btn btn-outline"
+                  onClick={() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })}
+                >
+                  Ver gabarito
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {questions.map((q, i) => (
+          <QuestionCard
+            key={q.id}
+            question={q}
+            index={i}
+            total={questions.length}
+            reviewMode={status === 'finished'}
+            chosenAnswer={answers[q.id]}
+            onAnswer={
+              status === 'answering'
+                ? (_correct, chosen) => handleAnswer(q.id, chosen)
+                : undefined
+            }
+          />
+        ))}
+      </div>
+
+      {status === 'answering' && allAnswered && (
+        <div className="float-action">
+          <button onClick={finish} className="btn btn-accent btn-lg btn-block">
+            Ver gabarito <ArrowRight />
           </button>
         </div>
       )}
 
-      {/* Questões */}
-      {questions.map((q, i) => (
-        <div key={q.id}>
-          <p className="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">
-            Questão {i + 1}
-          </p>
-          <QuestionCard
-            question={q}
-            reviewMode={status === 'finished'}
-            chosenAnswer={answers[q.id]}
-            onAnswer={status === 'answering' ? (_correct, chosen) => handleAnswer(q.id, chosen) : undefined}
-          />
-        </div>
-      ))}
-
-      {/* Botão finalizar */}
-      {status === 'answering' && allAnswered && (
-        <button
-          onClick={finish}
-          className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 rounded-2xl text-lg transition-colors"
-        >
-          Ver gabarito →
-        </button>
-      )}
-
       {status === 'answering' && !allAnswered && (
-        <p className="text-center text-sm text-slate-400">
-          Responda todas as questões para ver o gabarito
+        <p className="center-state" style={{ padding: '24px 16px' }}>
+          Responda todas as questões para ver o gabarito ({questions.length - answeredCount} restantes).
         </p>
       )}
     </div>
